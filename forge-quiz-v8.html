@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forge — Votre baromètre de récupération</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101010;--bg2:#181818;--bg3:#202020;--lime:#FFFFFF;--lime-b:#E6E6E6;--lime-d:#CFCFCF;
+    --ink:#F5F5F5;--muted:#9A9A9A;--line:rgba(255,255,255,.16);--line2:rgba(255,255,255,.34);
+    --danger:#CFCFCF;--amber:#D4D4D4;--r:16px;--shadow:0 24px 60px -30px rgba(0,0,0,.7);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Poppins',system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+  .stage{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:22px}
+  .card{width:100%;max-width:680px;position:relative}
+  .mark{display:inline-block;vertical-align:middle}
+  .ptop{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .badge{width:30px;height:30px;border-radius:7px;background:var(--lime);color:#101010;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .ptrack{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}
+  .pfill{height:100%;width:0;background:var(--lime);transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .pstep{font-size:12px;color:var(--muted);font-weight:500;white-space:nowrap}
+  @media (prefers-reduced-motion:reduce){.pfill,.fill,.ringfill{transition:none}}
+  .panel{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:30px 32px 26px}
+  @media(max-width:540px){.panel{padding:24px 20px 22px}}
+  .sec-name{font-weight:600;color:var(--lime);font-size:13px;letter-spacing:.12em;text-transform:uppercase}
+  h2.page-t{font-weight:300;font-size:25px;line-height:1.16;margin:10px 0 6px;letter-spacing:-.01em}
+  h2.page-t b{font-weight:600}
+  .page-intro{color:var(--muted);font-size:14px;margin-bottom:22px}
+  .q{padding:16px 0;border-top:1px solid var(--line)}
+  .q:first-of-type{border-top:none;padding-top:4px}
+  .q-l{font-size:15.5px;font-weight:500;margin-bottom:12px}
+  .q-l .hint{display:block;font-weight:400;font-size:12.5px;color:var(--muted);margin-top:3px}
+  .sci{color:var(--muted);font-size:10px;font-style:italic;font-weight:400;margin-left:6px;letter-spacing:.02em;vertical-align:2px}
+  .opts{display:flex;flex-wrap:wrap;gap:9px}
+  .opt{border:1.5px solid var(--line);background:var(--bg3);color:var(--ink);border-radius:11px;padding:11px 15px;font-family:inherit;font-size:14px;cursor:pointer;transition:all .15s;text-align:left}
+  .opt:hover{border-color:var(--line2)}
+  .opt.sel{border-color:var(--lime);background:rgba(255,255,255,.14);color:#fff;font-weight:500}
+  .opt:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+  .opts.stack .opt{width:100%}
+  .scale{display:flex;gap:7px}
+  .scale button{flex:1;min-width:0;aspect-ratio:1/1;border:1.5px solid var(--line);background:var(--bg3);color:var(--ink);border-radius:10px;font-family:inherit;font-weight:600;font-size:15px;cursor:pointer;transition:all .13s}
+  .scale button:hover{border-color:var(--line2)}
+  .scale button.sel{background:var(--lime);border-color:var(--lime);color:#101010}
+  .scale-ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:7px}
+  .skip-note{font-size:13px;color:var(--muted);font-style:italic;padding:6px 0}
+  .legend-sci{font-size:11px;color:var(--muted);margin-top:18px;font-style:italic}
+  .nav{display:flex;justify-content:space-between;align-items:center;margin-top:26px}
+  .back{background:none;border:none;color:var(--muted);font-family:inherit;font-size:14px;cursor:pointer;padding:8px 2px}
+  .back:hover{color:var(--ink)}
+  .back:disabled{opacity:0;pointer-events:none}
+  .btn{font-family:inherit;font-weight:600;background:var(--lime);color:#101010;border:none;border-radius:12px;padding:13px 26px;font-size:15px;cursor:pointer;transition:all .15s}
+  .btn:hover{background:var(--lime-b)}
+  .btn:active{transform:scale(.985)}
+  .btn:disabled{opacity:.32;pointer-events:none}
+  .btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line2)}
+  .btn.ghost:hover{background:rgba(255,255,255,.04)}
+  .btn.amber{background:var(--amber);color:#101010}
+  .btn.amber:hover{background:#E2E2E2}
+  .hero{text-align:center;padding:20px 10px 6px}
+  .hero h1{font-weight:300;font-size:33px;line-height:1.12;margin:22px 0 8px}
+  .hero h1 b{font-weight:600;color:var(--lime)}
+  .tagline{color:var(--lime);font-weight:500;letter-spacing:.02em;font-size:15px;margin-bottom:16px}
+  .logo-lock{margin-bottom:14px}
+  .wordmark{font-weight:500;letter-spacing:.3em;font-size:32px;color:var(--ink);margin:12px 0 6px;padding-left:.3em}
+  .logo-lock .tagline{margin-bottom:0}
+  .hero .brandline{color:var(--ink);font-size:17px;max-width:430px;margin:8px auto 12px;font-weight:400}
+  .hero .brandline b{color:var(--lime);font-weight:600}
+  .accroche{font-family:'Poppins',sans-serif;font-weight:600;font-size:26px;color:var(--ink);line-height:1.12;margin:12px auto 8px;letter-spacing:-.01em}
+  .hero-sub{color:var(--muted);font-size:14.5px;max-width:460px;margin:0 auto 22px}
+  .hero-sub b{color:var(--ink);font-weight:600}
+  .hero p{color:var(--muted);font-size:15px;max-width:460px;margin:0 auto 24px}
+  .hero .meta{display:flex;gap:26px;justify-content:center;margin:0 0 26px;flex-wrap:wrap}
+  .hero .meta div{font-size:12.5px;color:var(--muted)}
+  .hero .meta b{display:block;color:var(--ink);font-weight:600;font-size:15px}
+  .intro-fields{max-width:360px;margin:4px auto 4px;text-align:left}
+  .row2{display:flex;gap:12px}.row2 .field{flex:1}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .field input{width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:11px;background:var(--bg3);color:var(--ink);font-family:inherit;font-size:15px}
+  .field input:focus{outline:none;border-color:var(--lime)}
+  .consent{display:flex;gap:11px;align-items:flex-start;margin:14px 0 4px;font-size:13.5px;color:var(--muted)}
+  .consent input{margin-top:2px;width:17px;height:17px;accent-color:var(--lime);flex:0 0 auto}
+  .err{color:var(--danger);font-size:13px;min-height:16px;margin-top:4px}
+  .hero .err{text-align:center}
+  /* results */
+  .res-hero{text-align:center;padding:10px 6px 6px}
+  .score-big{font-weight:300;font-size:56px;line-height:1;color:var(--lime);margin:8px 0 2px}
+  .score-lbl{font-size:13px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+  .palier{color:var(--ink);font-size:15px;max-width:480px;margin:14px auto 4px}
+  .valo{background:rgba(255,255,255,.1);border:1px solid var(--line2);border-radius:13px;padding:15px 17px;font-size:14.5px;margin:18px 0 4px;color:var(--lime-b)}
+  .sect{font-weight:600;color:var(--lime);font-size:12px;letter-spacing:.13em;text-transform:uppercase;margin:24px 0 12px;display:flex;align-items:center;gap:10px}
+  .sect::after{content:"";flex:1;height:1px;background:var(--line)}
+  .advice{border:1.5px solid var(--line);background:var(--bg2);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+  .advice.demande{border-color:var(--lime);background:rgba(255,255,255,.08)}
+  .advice h3{font-weight:600;font-size:16px;margin-bottom:11px}
+  .advice h3 .axtag{font-weight:500;font-size:12px;color:var(--muted)}
+  .tip{margin-bottom:10px}
+  .tip:last-child{margin-bottom:0}
+  .tip b{display:block;font-size:14px;font-weight:600;margin-bottom:2px}
+  .tip span{font-size:13.5px;color:#CFCFCF}
+  .tip .ref{color:var(--muted);font-style:italic;font-size:12px}
+  .note-vege{background:var(--bg3);border-radius:11px;padding:12px 14px;font-size:13px;color:var(--lime-b);margin-top:8px}
+  .flag{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.34);border-radius:14px;padding:20px 20px 18px;margin:6px 0 4px}
+  .flag h3{font-weight:600;font-size:18px;margin-bottom:8px;color:#E6E6E6}
+  .flag p{font-size:14.5px;color:var(--ink)}
+  .cta{background:var(--bg3);border:1px solid var(--line2);border-radius:14px;padding:20px 20px;margin-top:22px;text-align:center}
+  .cta p{color:var(--ink);font-size:14px;margin-bottom:16px;max-width:460px;margin-left:auto;margin-right:auto}
+  .cta .btn{min-width:250px}
+  .restart-wrap{text-align:center;margin-top:14px}
+  .cta p{font-size:14px;color:#CFCFCF;margin-bottom:14px}
+  .cta-row{display:flex;gap:11px;flex-wrap:wrap}
+  .cta-row .btn{flex:1;min-width:160px;text-align:center}
+  .confirm{font-size:13px;color:var(--lime);margin-top:15px;text-align:center}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin-top:16px;line-height:1.5}
+  .fade{animation:fade .32s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion:reduce){.fade{animation:none}}
+</style>
+</head>
+<body>
+<div class="stage"><div class="card" id="card"></div></div>
+<script>
+function wave(size){return `<img class="mark" src="data:image/png;base64,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" width="${size}" style="display:inline-block;vertical-align:middle;height:auto" alt="Forge">`;}
+
+/* ============ QUESTIONS ============ */
+const PAGES=[
+ {id:"profil",n:"01",sec:"Habitudes de vie",title:"Votre quotidien.",
+  intro:"Pour situer votre profil et personnaliser vos conseils.",
+  qs:[
+   {id:"metier",type:"text",optional:true,l:"Quel est votre métier ?",hint:"Facultatif."},
+   {id:"travail",type:"choice",l:"Au travail, vous êtes plutôt…",o:[
+     {v:"sed",t:"Sédentaire (assis)"},{v:"mixte",t:"Mixte"},{v:"phys",t:"Physique / debout"}]},
+   {id:"objectif",type:"choice",stack:true,l:"Votre priorité n°1 en ce moment ?",o:[
+     {v:"energie",t:"Retrouver de l'énergie et mieux dormir"},{v:"souffler",t:"Souffler, relâcher la pression"},
+     {v:"douleur",t:"Réduire mes douleurs et tensions"},{v:"recup_sport",t:"Mieux récupérer après le sport"},
+     {v:"force",t:"Gagner en force et en forme"},{v:"longevite",t:"Préserver ma vitalité et optimiser ma longévité"},
+     {v:"rehab",t:"Revenir d'une blessure"}]},
+   {id:"obj_sec",type:"multi",optional:true,l:"D'autres objectifs secondaires ? (plusieurs possibles)",o:[
+     {v:"energie",t:"Retrouver de l'énergie et mieux dormir"},{v:"souffler",t:"Souffler, relâcher la pression"},
+     {v:"douleur",t:"Réduire mes douleurs et tensions"},{v:"recup_sport",t:"Mieux récupérer après le sport"},
+     {v:"force",t:"Gagner en force et en forme"},{v:"longevite",t:"Préserver ma vitalité et optimiser ma longévité"},
+     {v:"rehab",t:"Revenir d'une blessure"}]},
+   {id:"compet",type:"choice",l:"Pratiquez-vous un sport en compétition ?",o:[
+     {v:"comp_reg",t:"Oui, régulièrement"},{v:"comp_occ",t:"Oui, parfois"},{v:"loisir",t:"Non, en loisir"},{v:"nonsport",t:"Je ne fais pas de sport"}]},
+   {id:"freq",type:"choice",l:"Séances de sport / activité physique par semaine ?",o:[
+     {v:"f0",t:"0"},{v:"f12",t:"1–2"},{v:"f34",t:"3–4"},{v:"f5",t:"5 et +"}]},
+   {id:"phase",type:"choice",optional:true,l:"Si vous vous entraînez, dans quelle phase êtes-vous ?",hint:"Facultatif.",o:[
+     {v:"dev",t:"Développement / renforcement"},{v:"intersaison",t:"Intersaison"},{v:"endurance",t:"Endurance / cardio"},
+     {v:"compet",t:"Compétition"},{v:"entretien",t:"Entretien"},{v:"reprise",t:"Reprise / réhab"},{v:"blesse",t:"Blessé (en cours de soin)"},{v:"na",t:"Pas concerné"}]},
+  ]},
+ {id:"sommeil",n:"02",sec:"Sommeil",title:"Votre sommeil.",intro:"Le socle de la récupération : régularité, durée, qualité.",
+  qs:[
+   {id:"s_reg",type:"choice",sci:"MCTQ*",l:"Vos horaires de coucher / lever sont-ils réguliers ?",o:[
+     {v:"tres",t:"Très réguliers"},{v:"plutot",t:"Plutôt régulier"},{v:"assez",t:"Assez variables"},{v:"var",t:"Très variables"}]},
+   {id:"s_duree",type:"choice",sci:"PSQI*",l:"Combien d'heures dormez-vous réellement par nuit ?",o:[
+     {v:"d5",t:"< 5 h"},{v:"d56",t:"5–6 h"},{v:"d67",t:"6–7 h"},{v:"d78",t:"7–8 h"},{v:"d8",t:"> 8 h"}]},
+   {id:"s_qual",type:"scale",min:1,max:5,sci:"PSQI*",l:"Qualité globale de votre sommeil ?",lo:"Très mauvaise",hi:"Excellente"},
+   {id:"s_lat",type:"choice",sci:"PSQI · Jenkins*",l:"Temps pour vous endormir ?",o:[
+     {v:"l15",t:"< 15 min"},{v:"l1530",t:"15–30 min"},{v:"l3060",t:"30–60 min"},{v:"l60",t:"> 60 min"}]},
+   {id:"s_rev",type:"choice",sci:"Jenkins*",l:"Réveils nocturnes ou trop tôt sans vous rendormir ?",o:[
+     {v:"r0",t:"Jamais / rare"},{v:"r1",t:"1×/sem"},{v:"r2",t:"2×/sem"},{v:"r3",t:"≥ 3×/sem"}]},
+  ]},
+ {id:"bienetre",n:"03",sec:"Corps ET tête",title:"Ces 2 semaines, <b>dans votre corps comme dans votre tête</b>.",
+  intro:"Comment vous êtes-vous senti, physiquement et mentalement ?",
+  qs:[
+   {id:"b_humeur",type:"scale",min:0,max:5,sci:"WHO-5*",l:"« Je me suis senti de bonne humeur, positif. »",lo:"Jamais",hi:"Tout le temps"},
+   {id:"b_calme",type:"scale",min:0,max:5,sci:"WHO-5*",l:"« Je me suis senti calme et détendu. »",lo:"Jamais",hi:"Tout le temps"},
+   {id:"b_energie",type:"scale",min:0,max:5,sci:"WHO-5*",l:"« Je me suis senti plein d'énergie. »",lo:"Jamais",hi:"Tout le temps"},
+   {id:"b_stress",type:"scale",min:1,max:5,sci:"PSS*",l:"À quel point vous sentez-vous stressé, sous tension ?",lo:"Pas du tout",hi:"Énormément"},
+   {id:"b_pression",type:"choice",l:"Ressentez-vous de la pression (travail, compétition, vie perso) ?",o:[
+     {v:"p_non",t:"Pas vraiment"},{v:"p_peu",t:"Un peu"},{v:"p_bcp",t:"Beaucoup"}]},
+   {id:"b_social",type:"choice",sci:"lien social (OSSS)*",l:"À quelle fréquence voyez-vous ou échangez-vous avec vos proches (amis, famille) ?",o:[
+     {v:"soc0",t:"Rarement"},{v:"soc1",t:"Quelques fois par mois"},{v:"soc2",t:"Chaque semaine"},{v:"soc3",t:"Presque tous les jours"}]},
+   {id:"b_exterieur",type:"choice",sci:"exposition nature*",l:"Combien de temps passez-vous dehors, en plein air ou en nature, par semaine ?",o:[
+     {v:"ext0",t:"Moins de 30 min"},{v:"ext1",t:"30 min – 1 h"},{v:"ext2",t:"1 – 2 h"},{v:"ext3",t:"2 h et +"}]},
+  ]},
+ {id:"recup",n:"04",sec:"Récupération",title:"Votre récupération.",intro:"Votre capacité à récupérer — d'une semaine chargée, du stress, du sport.",
+  qs:[
+   {id:"r_recup",type:"scale",min:0,max:6,sci:"SRSS*",l:"En ce moment, vous sentez-vous reposé et rechargé ?",lo:"Vidé",hi:"Pleinement rechargé"},
+   {id:"r_tens",type:"scale",min:0,max:6,sci:"SRSS*",l:"À quel point votre corps est-il tendu ou raide ?",lo:"Détendu",hi:"Très tendu"},
+   {id:"r_lourd",type:"choice",l:"Avez-vous les jambes lourdes ou une sensation de gonflement ?",o:[
+     {v:"lo_j",t:"Jamais"},{v:"lo_p",t:"Parfois"},{v:"lo_s",t:"Souvent"},{v:"lo_ts",t:"Très souvent"}]},
+  ]},
+ {id:"douleur",n:"05",sec:"Douleur",title:"Douleurs & tensions.",intro:"Si vous en avez, précisons. Sinon, page vite passée.",
+  qs:[
+   {id:"d_zone",type:"multi",none:"none",sci:"localisation",l:"Douleurs ou tensions en ce moment ? Où ?",hint:"Plusieurs choix possibles.",o:[
+     {v:"none",t:"Aucune"},{v:"dos",t:"Dos / colonne"},{v:"artic",t:"Articulations"},{v:"muscle",t:"Muscles"},{v:"tendon",t:"Tendons"},{v:"autre",t:"Autres (viscéral, céphalées, gynéco…)"}]},
+   {id:"d_int",type:"scale",min:0,max:10,cond:true,sci:"EVA / NRS*",l:"Intensité moyenne de la douleur ?",lo:"0",hi:"10"},
+   {id:"d_anc",type:"choice",cond:true,sci:"IASP*",l:"Depuis combien de temps ?",o:[
+     {v:"a6",t:"< 6 semaines"},{v:"a63",t:"6 sem – 3 mois"},{v:"a3plus",t:"> 3 mois"}]},
+   {id:"d_eval",type:"choice",cond:true,l:"Déjà évaluée par un professionnel de santé ?",o:[{v:"oui",t:"Oui"},{v:"non",t:"Non"}]},
+   {id:"d_cat",type:"scale",min:0,max:4,cond:true,sci:"PCS*",l:"« Quand j'ai mal, je pense que ça pourrait être grave ou ne jamais s'arrêter. »",lo:"Pas du tout",hi:"Tout le temps"},
+   {id:"d_verb",type:"choice",cond:true,l:"Difficile de mettre des mots sur ce que vous ressentez ?",o:[{v:"v_non",t:"Non"},{v:"v_peu",t:"Un peu"},{v:"v_bcp",t:"Beaucoup"}]},
+  ]},
+ {id:"corps",n:"06",sec:"Corps & esprit",title:"Le lien corps–esprit.",intro:"Votre écoute de vous-même, et vos préférences.",
+  qs:[
+   {id:"i_notice",type:"scale",min:0,max:5,sci:"MAIA-2*",l:"« Je remarque facilement les signaux de mon corps (fatigue, tension, faim). »",lo:"Pas du tout",hi:"Tout à fait"},
+   {id:"pref",type:"choice",stack:true,l:"Vous êtes plutôt attiré par une approche…",o:[
+     {v:"passive",t:"Passive, sensorielle et high-tech"},{v:"active",t:"Active (mouvement, mobilité, renfort)"},
+     {v:"manuelle",t:"Manuelle (travail sur le corps)"},{v:"mentale",t:"Mentale (respiration, gestion du stress)"},
+     {v:"sociale",t:"Sociale et conviviale (en groupe)"}]},
+  ]},
+ {id:"nutrition",n:"07",sec:"Nutrition",title:"Votre alimentation.",intro:"Quelques repères simples — sans rentrer dans les détails.",
+  qs:[
+   {id:"n_repas",type:"choice",l:"Combien de repas par jour en moyenne ?",o:[
+     {v:"v1",t:"1"},{v:"v2",t:"2"},{v:"v3",t:"3"},{v:"v4",t:"4"}]},
+   {id:"n_ultra",type:"choice",sci:"NOVA*",l:"À quelle fréquence : aliments ultra-transformés, sodas, plats préparés ?",o:[
+     {v:"u_rare",t:"Rarement"},{v:"u_parfois",t:"Parfois"},{v:"u_souvent",t:"Souvent"},{v:"u_tres",t:"Très souvent"}]},
+   {id:"n_regime",type:"choice",l:"Votre type d'alimentation ?",o:[
+     {v:"omni",t:"Pas de régime particulier"},{v:"flexi",t:"Flexitarien"},{v:"pesci",t:"Pescitarien"},{v:"vege",t:"Végétarien"},{v:"vegan",t:"Végan"},{v:"autre",t:"Autre"}]},
+   {id:"n_fl",type:"choice",sci:"indice qualité*",l:"Portions de fruits & légumes par jour ?",o:[
+     {v:"fl0",t:"< 1"},{v:"fl1",t:"1–2"},{v:"fl2",t:"3–4"},{v:"fl3",t:"5 et +"}]},
+   {id:"n_prot",type:"choice",l:"Une source de protéines à chaque repas principal ?",o:[
+     {v:"p_rare",t:"Rarement"},{v:"p1",t:"1 repas"},{v:"p2",t:"2 repas"},{v:"p_almost",t:"Presque toujours"}]},
+   {id:"n_hydra",type:"choice",l:"Combien d'eau buvez-vous par jour environ ?",o:[
+     {v:"h1",t:"Moins d'1 L"},{v:"h2",t:"1 à 1,5 L"},{v:"h3",t:"1,5 à 2 L"},{v:"h4",t:"Plus de 2 L"}]},
+   {id:"n_poisson",type:"choice",l:"Poisson gras / oméga-3 (saumon, sardines, noix, colza) ?",o:[
+     {v:"pg0",t:"Jamais"},{v:"pg1",t:"< 1×/sem"},{v:"pg2",t:"1–2×/sem"},{v:"pg3",t:"2×/sem et +"}]},
+  ]},
+];
+
+/* ============ CONSEILS PAR DOMAINE (issus du PDF, sources citées) ============ */
+const tip=(h,t,ref)=>({h,t,ref});
+const ADVICE={
+ sommeil:{label:"Sommeil",tips:[
+   tip("Régularité des horaires","Misez sur la stabilité de vos heures de coucher et de lever plutôt que sur la durée : la régularité est un marqueur de santé et de longévité encore plus fort que le nombre d'heures.","Windred et al., 2024"),
+   tip("Environnement propice","Rendez votre chambre sombre, fraîche et calme, et baissez la lumière vive avant le coucher : une base clé d'une bonne hygiène de sommeil.","Krizan & Hisler, 2022"),
+   tip("Déconnexion numérique","Limitez les écrans le soir : chaque heure d'écran en plus est associée à un coucher retardé (~13 min) et à du sommeil perdu.","He et al., 2025")]},
+ forme:{label:"Forme physique",tips:[
+   tip("La marche digestive","Marchez 10 minutes après les repas pour réguler la glycémie et relancer la circulation, sans effort.","Buffey et al., 2022"),
+   tip("Le renforcement bi-hebdomadaire","Deux séances de renforcement par semaine, avec un peu d'aérobie quotidien, comptent parmi les meilleurs investissements santé (jusqu'à −40 % de mortalité).","Sain et al., 2024"),
+   tip("La régularité avant l'intensité","Commencez par deux séances réalistes de 15 min : la clé du succès, c'est la régularité du déclencheur, pas l'intensité.","Milkman 2021 ; Islam 2022")]},
+ stress:{label:"Stress",tips:[
+   tip("Le soupir physiologique","La technique la plus rapide pour faire chuter le stress : 3–4 cycles (double inspiration nasale puis longue expiration).","Balban et al., 2023"),
+   tip("Les relations sociales","Réinvestissez du temps dans vos liens sociaux : un effet protecteur sur la santé comparable à l'arrêt du tabac.","Holt-Lunstad 2010 ; Inagaki 2021"),
+   tip("L'immersion thermique","La douche alternée chaud/froid entraîne votre système nerveux à rester stable face au stress.","Søberg et al., 2021")]},
+ confort:{label:"Confort / douleurs",tips:[
+   tip("Repenser l'alarme","La douleur est un signal de protection, pas forcément une lésion : comprendre qu'« avoir mal ≠ être abîmé » diminue l'alarme et la peur de bouger.","Louw et al., 2016"),
+   tip("Bouger progressivement","N'attendez pas l'absence de douleur pour bouger : un mouvement guidé et progressif réduit les douleurs chroniques (jusqu'à −40 % pour la lombalgie).","Kent et al., 2023"),
+   tip("Votre pharmacie naturelle","Souffle (cohérence cardiaque), contrastes thermiques et massages activent vos circuits naturels de soulagement de la douleur.","Tracey et al., 2020")]},
+ recup:{
+   sedentaire:{label:"Récupération",tips:[
+     tip("L'hydratation continue","Buvez par petites gorgées pour 1,5–2 L/jour sans attendre la soif : cela soutient le métabolisme et dissipe la fatigue.","Haller et al., 2022"),
+     tip("Marche digestive & coucher fixe","10 min de marche après le déjeuner + une heure de coucher régulière, écrans coupés 30 min avant.","Punna 2022 ; Windred 2024"),
+     tip("Loisir & lien social","Après le travail, une activité de loisir partagée apaise l'esprit et restaure votre énergie.","Arredondo, 2020")]},
+   mixte:{label:"Récupération",tips:[
+     tip("Mobilité & mouvement","10–15 min de mobilité globale (thoracique, hanches, étirements fluides) améliore le lien corps-esprit et préserve l'énergie.","Haller 2022 ; Erdoğan 2021"),
+     tip("Alternance thermique & souffle","Douche contrastée (2–3 × 2 min chaud / 30 s froid) avec respiration apaisée : détente immédiate du corps et de l'esprit.","Søberg, 2021"),
+     tip("Équilibre pro-perso","Sanctuarisez 1–2 créneaux/semaine hors domicile et bureau pour bouger et récupérer.","Mostert, 2009")]},
+   sportif:{label:"Récupération",tips:[
+     tip("Nutrition de récupération","Soignez votre apport post-effort (protéines + glucides) pour réparer les fibres et recharger vos réserves.","BJSM, 2018"),
+     tip("Régularité des horaires","Stabilité des heures de coucher plutôt que durée : un marqueur de santé et de longévité.","Windred et al., 2024"),
+     tip("Contraste thermique chaud/froid","2–3 cycles (2 min chaud / 30 s froid) en contrôlant le souffle : récupération plus rapide, moins de courbatures.","Haller 2022 ; Søberg 2021")]}},
+ nutrition:{
+   sedentaire:{label:"Nutrition",tips:[
+     tip("Protéines le matin","Une vraie source de protéines au petit-déjeuner stabilise l'énergie sur la journée et protège vos muscles.","J. Nutrition"),
+     tip("Reminéraliser l'eau","La fatigue de l'après-midi vient souvent d'un manque d'eau minérale : visez une eau riche en magnésium plutôt qu'un 3e café.",""),
+     tip("Bons lipides","Les oméga-3 (noix, sardines, colza) freinent l'inflammation silencieuse responsable de la sensation de lourdeur.","")]},
+   sportif:{label:"Nutrition",tips:[
+     tip("30 g de protéines post-effort","Une dose complète d'acides aminés dans les 2 h après l'entraînement stimule le remodelage musculaire.","BJSM, 2018"),
+     tip("Eau sodée à 150 %","Après l'effort, compensez vos pertes avec du sodium pour recharger le volume sanguin.","Sports Medicine"),
+     tip("Polyphénols ciblés","Fruits rouges et baies, à distance de la séance, réduisent les courbatures et préservent votre force.","BJSM, 2021")]},
+   vege:"Profil végétarien / végan : veillez à un apport en protéines suffisant et réparti (légumineuses + céréales, tofu, tempeh), et surveillez les carences fréquentes — fer, vitamine B12 (supplémentation recommandée), oméga-3, zinc et iode."},
+};
+
+/* ============ PALIERS ============ */
+function palier(score){
+  if(score<=20)return "Votre potentiel inexploité est immense : chaque petit ajustement vous apportera des bénéfices immédiats.";
+  if(score<=40)return "Les bases sont là, il ne reste qu'à structurer vos habitudes pour franchir un vrai cap d'énergie.";
+  if(score<=60)return "Un équilibre déjà solide : ciblez quelques leviers précis pour passer de la simple résistance à la pleine vitalité durable.";
+  if(score<=80)return "Excellente gestion de vos ressources : place aux réglages de précision pour maximiser votre forme.";
+  return "Maîtrise remarquable : votre récupération est optimale, vous pouvez concentrer votre énergie sur d'autres axes de performance.";
+}
+
+/* ============ ÉTAT ============ */
+let A={},pi=0,screen="intro",contact={prenom:"",age:"",email:"",consent:false,science:false};
+const card=document.getElementById("card");
+function painActive(){const z=A.d_zone||[];return z.length>0&&!z.includes("none");}
+function qActive(pg,q){if(q.showIf&&!q.showIf(A))return false;if(pg.id==="douleur"&&q.cond)return painActive();return true;}
+function qReq(pg,q){if(q.optional)return false;if(q.showIf)return q.showIf(A);if(pg.id==="douleur"&&q.cond)return painActive();return true;}
+function answered(q){const v=A[q.id];if(q.type==="multi")return Array.isArray(v)&&v.length>0;if(q.type==="text")return true;return v!==undefined&&v!==null;}
+function pageComplete(pg){return pg.qs.every(q=>!qReq(pg,q)||answered(q));}
+function totalSteps(){return PAGES.length+1;}
+function scrollTop(){if(typeof window!=="undefined"&&window.scrollTo)window.scrollTo({top:0,behavior:"smooth"});}
+function avg(a){return a.reduce((x,y)=>x+y,0)/a.length;}
+
+function render(){if(screen==="intro")return renderIntro();if(screen==="contact")return renderContact();if(screen==="results")return renderResults();renderPage();}
+
+function renderIntro(){
+  card.innerHTML=`<div class="panel fade"><div class="hero">
+    <div class="logo-lock">${wave(48)}<div class="wordmark">FORGE</div><div class="tagline">De Corps et d'Esprit</div></div>
+    <p class="brandline">Un lieu pour <b>se renforcer, récupérer et durer.</b></p>
+    <h1 class="accroche">Forgez votre récupération.</h1>
+    <p class="hero-sub">En 6 minutes, découvrez votre <b>capital récupération</b> : vos points forts, les ressources que vous n'exploitez pas encore, et des conseils issus de la science pour progresser.</p>
+    <div class="meta"><div><b>~6 min</b>chrono</div><div><b>6 axes</b>+ radar</div><div><b>Construit</b>avec des questionnaires scientifiques</div></div>
+    <div class="intro-fields"><div class="row2">
+      <div class="field"><label>Prénom</label><input id="prenom" type="text" autocomplete="given-name" placeholder="Prénom" value="${contact.prenom}"></div>
+      <div class="field"><label>Âge</label><input id="age" type="number" min="10" max="110" inputmode="numeric" placeholder="Âge" value="${contact.age}"></div>
+    </div></div>
+    <div class="err" id="pnerr"></div>
+    <button class="btn" id="go">Commencer le bilan</button></div></div>`;
+  const start=()=>{const p=document.getElementById("prenom").value.trim();const a=parseInt(document.getElementById("age").value,10);
+    if(!p){document.getElementById("pnerr").textContent="Dites-nous votre prénom pour commencer.";return;}
+    if(!a||a<10||a>110){document.getElementById("pnerr").textContent="Indiquez un âge valide.";return;}
+    contact.prenom=p;contact.age=a;screen="page";pi=0;render();scrollTop();};
+  document.getElementById("go").onclick=start;
+}
+
+function scaleRow(q){let a="";for(let i=q.min;i<=q.max;i++)a+=`<button data-v="${i}" class="${A[q.id]===i?'sel':''}">${i}</button>`;
+  return `<div class="scale-ends"><span>${q.lo}</span><span>${q.hi}</span></div><div class="scale">${a}</div>`;}
+function choiceRow(q){const s=A[q.id];return `<div class="opts ${q.stack?'stack':''}">${q.o.map(o=>`<button class="opt ${s===o.v?'sel':''}" data-v="${o.v}">${o.t}</button>`).join("")}</div>`;}
+function multiRow(q){const s=A[q.id]||[];return `<div class="opts">${q.o.map(o=>`<button class="opt ${s.includes(o.v)?'sel':''}" data-v="${o.v}">${o.t}</button>`).join("")}</div>`;}
+function textRow(q){return `<input class="field" id="txt_${q.id}" type="text" value="${A[q.id]||''}" placeholder="${q.hint||''}" style="width:100%;padding:13px 15px;border:1.5px solid var(--line);border-radius:11px;background:var(--bg3);color:var(--ink);font-family:inherit;font-size:15px">`;}
+
+function renderPage(animate){
+  const pg=PAGES[pi],pct=Math.round((pi/totalSteps())*100);let body="",hasSci=false;
+  pg.qs.forEach(q=>{if(!qActive(pg,q))return;if(q.sci)hasSci=true;
+    const ctrl=q.type==="scale"?scaleRow(q):q.type==="multi"?multiRow(q):q.type==="text"?textRow(q):choiceRow(q);
+    body+=`<div class="q" data-qid="${q.id}"><div class="q-l">${q.l}${q.sci?`<sup class="sci">${q.sci}</sup>`:""}${q.hint&&q.type!=="text"?`<span class="hint">${q.hint}</span>`:""}</div>${ctrl}</div>`;});
+  if(pg.id==="douleur"&&!painActive()&&(A.d_zone||[]).includes("none"))body+=`<div class="skip-note">Pas de douleur — parfait, vous pouvez continuer.</div>`;
+  if(hasSci)body+=`<div class="legend-sci">* questions adaptées de questionnaires scientifiques validés.</div>`;
+  card.innerHTML=`<div class="ptop"><span class="badge">${pg.n}</span>
+    <div class="ptrack"><div class="pfill" style="width:${pct}%"></div></div><span class="pstep">${pi+1} / ${PAGES.length}</span></div>
+    <div class="panel ${animate!==false?'fade':''}"><div class="sec-name">${pg.sec}</div><h2 class="page-t">${pg.title}</h2><p class="page-intro">${pg.intro}</p>${body}
+    <div class="nav"><button class="back" id="back" ${pi===0?'disabled':''}>← Retour</button>
+    <button class="btn" id="next" ${pageComplete(pg)?'':'disabled'}>Continuer</button></div></div>`;
+  card.querySelectorAll(".q").forEach(qEl=>{const q=pg.qs.find(x=>x.id===qEl.dataset.qid);
+    if(q.type==="text"){const inp=qEl.querySelector("input");inp.addEventListener("input",()=>{A[q.id]=inp.value;});return;}
+    qEl.querySelectorAll(".scale button, .opt").forEach(b=>{b.onclick=()=>onAnswer(pg,q,qEl,b);});});
+  document.getElementById("back").onclick=()=>{if(pi>0){pi--;render();scrollTop();}};
+  document.getElementById("next").onclick=()=>{if(pi<PAGES.length-1){pi++;render();scrollTop();}else{screen="contact";render();scrollTop();}};
+}
+function onAnswer(pg,q,qEl,btn){const v=btn.dataset.v;
+  if(q.type==="scale"){A[q.id]=parseInt(v,10);qEl.querySelectorAll(".scale button").forEach(x=>x.classList.remove("sel"));btn.classList.add("sel");updateNext(pg);}
+  else if(q.type==="multi"){let c=A[q.id]?[...A[q.id]]:[];
+    if(v===q.none)c=c.includes(v)?[]:[v];else{c=c.filter(x=>x!==q.none);c.includes(v)?c.splice(c.indexOf(v),1):c.push(v);}A[q.id]=c;
+    if(pg.id==="douleur"){const y=(typeof window!=="undefined"&&window.scrollY)||0;renderPage(false);if(typeof window!=="undefined")window.scrollTo(0,y);}
+    else{qEl.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",(A[q.id]||[]).includes(x.dataset.v)));updateNext(pg);}}
+  else{A[q.id]=v;qEl.querySelectorAll(".opt").forEach(x=>x.classList.remove("sel"));btn.classList.add("sel");updateNext(pg);}
+}
+function updateNext(pg){const n=card.querySelector("#next");if(n)n.disabled=!pageComplete(pg);}
+
+function renderContact(){
+  const pct=Math.round((PAGES.length/totalSteps())*100);const nom=contact.prenom||"";
+  card.innerHTML=`<div class="ptop"><span class="badge">08</span>
+    <div class="ptrack"><div class="pfill" style="width:${pct}%"></div></div><span class="pstep">Votre bilan</span></div>
+    <div class="panel fade"><div class="sec-name">Presque fini</div><h2 class="page-t">${nom?nom+", découvre ton":"Ton"} <b>baromètre</b>.</h2>
+    <p class="page-intro">On t'envoie aussi ton bilan et des conseils fondés science (sans spam).</p>
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" placeholder="vous@exemple.fr" value="${contact.email}"><div class="err" id="mailerr"></div></div>
+    <label class="consent"><input type="checkbox" id="consent" ${contact.consent?'checked':''}><span>J'accepte de recevoir la newsletter Forge (désabonnement à tout moment).</span></label>
+    <label class="consent"><input type="checkbox" id="science" ${contact.science?'checked':''}><span>J'autorise l'utilisation anonymisée de mes réponses à des fins de <b>publication scientifique</b>.</span></label>
+    <div class="nav"><button class="back" id="back">← Retour</button><button class="btn" id="see">Voir mon bilan →</button></div></div>`;
+  document.getElementById("back").onclick=()=>{screen="page";pi=PAGES.length-1;render();};
+  document.getElementById("see").onclick=()=>{
+    contact.email=document.getElementById("email").value.trim();
+    contact.consent=document.getElementById("consent").checked;
+    contact.science=document.getElementById("science").checked;
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.email)){document.getElementById("mailerr").textContent="Entre un email valide pour recevoir ton bilan.";return;}
+    submitCRM();screen="results";render();scrollTop();
+  };
+}
+
+/* ============ SCORES (6 axes, 0-100) — pondération scientifique ============ */
+function dims(){
+  // Léger ajustement selon l'âge (déclin physiologique récup/forme après ~35 ans)
+  const age=+contact.age||35;
+  const ageF=Math.max(0.88,1-Math.max(0,age-35)*0.003);
+  // Sommeil : PSQI (qualité, latence, durée, réveils) + régularité MCTQ ; régularité & qualité sur-pondérées (Windred 2024)
+  const regM=({tres:1,plutot:.7,assez:.35,var:0})[A.s_reg]??.5;
+  const qualM=(((A.s_qual??3)-1)/4);
+  const latM=({l15:1,l1530:.66,l3060:.33,l60:0})[A.s_lat]??.5;
+  const durM=({d8:.9,d78:1,d67:.66,d56:.33,d5:0})[A.s_duree]??.5;
+  const revM=({r0:1,r1:.66,r2:.33,r3:0})[A.s_rev]??.5;
+  const sommeil=((1.25*regM+1.25*qualM+latM+durM+revM)/5.5)*100;
+  // Forme physique : volume OMS 2020 + statut compétition + malus sédentarité indépendant (Ekelund 2016) + âge
+  const freqC=({f0:0,f12:.45,f34:.85,f5:1})[A.freq]??.4;
+  const competB=({comp_reg:.10,comp_occ:.05,loisir:0,nonsport:0})[A.compet]??0;
+  const travailF=({sed:.85,mixte:1,phys:1.08})[A.travail]??1;
+  const forme=Math.max(5,Math.min(100,(freqC*travailF+competB)*100*ageF));
+  // Récupération : SRSS (récupération globale, poids 0,7) + signe circulatoire (0,3) + âge
+  const recupC=(A.r_recup??3)/6;
+  const circC=({lo_j:1,lo_p:.66,lo_s:.33,lo_ts:0})[A.r_lourd]??.66;
+  const recup=Math.max(4,(.7*recupC+.3*circC)*100*ageF);
+  // Stress & moral : PSS (stress + pression) + WHO-5 (humeur, calme) + lien social (Holt-Lunstad) + nature (White 2019)
+  const stressC=(5-(A.b_stress??3))/4;
+  const pressC=({p_non:1,p_peu:.5,p_bcp:0})[A.b_pression]??.5;
+  const socialC=({soc0:0,soc1:.4,soc2:.75,soc3:1})[A.b_social]??.5;
+  const natureC=({ext0:0,ext1:.4,ext2:.75,ext3:1})[A.b_exterieur]??.5;
+  const stress=((1.2*stressC+1*(A.b_humeur??2.5)/5+1*(A.b_calme??2.5)/5+0.8*pressC+1*socialC+0.6*natureC)/5.6)*100;
+  // Confort / douleurs : NRS (intensité, pesée ×2) + tensions musculaires
+  const tC=1-((A.r_tens??3)/6);
+  let confort=painActive()?((2*(1-Math.min(1,(A.d_int??5)/10))+tC)/3)*100:tC*100; confort=Math.max(6,confort);
+  // Nutrition : indice de qualité (fruits-légumes sur-pondérés) × malus NOVA multiplicatif
+  const fl=({fl0:0,fl1:.4,fl2:.75,fl3:1})[A.n_fl]??.5;
+  const prot=({p_rare:0,p1:.4,p2:.75,p_almost:1})[A.n_prot]??.5;
+  const hyd=({h1:0,h2:.5,h3:.9,h4:1})[A.n_hydra]??.5;
+  const poi=({pg0:0,pg1:.35,pg2:.85,pg3:1})[A.n_poisson]??.5;
+  const str=({v1:.4,v2:.75,v3:1,v4:.85})[A.n_repas]??.6;
+  const base=(1.3*fl+prot+hyd+poi+str)/5.3;
+  const malus=({u_rare:1,u_parfois:.9,u_souvent:.8,u_tres:.6})[A.n_ultra]??.9;
+  const nutrition=Math.max(4,base*malus*100);
+  return {sommeil,forme,recup,stress,confort,nutrition};
+}
+const AXES=["sommeil","forme","recup","stress","confort","nutrition"];
+const AXLBL={sommeil:"Sommeil",forme:"Forme physique",recup:"Récupération",stress:"Stress",confort:"Confort / douleurs",nutrition:"Nutrition"};
+const LEVER={sommeil:"votre sommeil",forme:"votre forme physique",recup:"votre récupération",stress:"votre gestion du stress",confort:"votre gestion des douleurs",nutrition:"votre alimentation"};
+const RADLBL=["Sommeil","Forme","Récup.","Stress","Confort","Nutrition"];
+const OBJ2AXIS={energie:"sommeil",souffler:"stress",douleur:"confort",recup_sport:"recup",force:"forme",longevite:"forme",rehab:"confort"};
+
+function profileKey(){
+  if(["comp_reg","comp_occ"].includes(A.compet)||["f34","f5"].includes(A.freq))return "sportif";
+  if(A.freq==="f0"&&A.travail==="sed")return "sedentaire";
+  if(A.objectif==="rehab"||["reprise","blesse"].includes(A.phase))return "sedentaire";
+  return "mixte";
+}
+function getAdvice(axis){
+  if(axis==="recup")return ADVICE.recup[profileKey()];
+  if(axis==="nutrition"){const nk=profileKey()==="sportif"?"sportif":"sedentaire";const a=ADVICE.nutrition[nk];
+    return {label:a.label,tips:a.tips,vege:["vege","vegan"].includes(A.n_regime)?ADVICE.nutrition.vege:null};}
+  return ADVICE[axis];
+}
+
+/* ============ PERSONA + CRM ============ */
+function persona(){
+  let qual;
+  if(["comp_reg","comp_occ"].includes(A.compet))qual="Compétiteur";
+  else if(["f5","f34"].includes(A.freq))qual="Sportif";
+  else if(A.freq==="f12"||A.travail==="phys")qual="Actif";
+  else qual="Sédentaire";
+  const senior=(+contact.age)>=60;
+  const fit=dims().forme;
+  let adj;
+  if(A.phase==="blesse"||A.objectif==="rehab")adj="blessé";
+  else if((A.objectif==="force"||A.objectif==="recup_sport")&&(["comp_reg","comp_occ"].includes(A.compet)||fit>=75))adj="performeur";
+  else if(A.objectif==="souffler"||(A.b_stress??0)>=4)adj="stressé";
+  else if(A.objectif==="douleur"||painActive())adj="douloureux";
+  else if(A.objectif==="energie")adj="en quête d'énergie";
+  else if(A.objectif==="longevite")adj="en prévention";
+  else if(A.objectif==="recup_sport")adj="en récupération";
+  else adj="en équilibre";
+  return {label:(senior?"Senior ":"")+qual+" "+adj,qualificatif:qual,adjectif:adj,senior};
+}
+function besoins(D){
+  const map={sommeil:["École du sommeil","Sophrologie","Neuromodulation"],forme:["Coaching","Pilates","Test physiologique"],
+    recup:["Bain froid","Sauna","Contraste","Photobiomodulation","Pressothérapie"],stress:["Sophrologie","Neuromodulation","Massage sensoriel","Préparation mentale"],
+    confort:["Photobiomodulation","Ostéopathie","École de la douleur","Mobilité"],nutrition:["Conseil nutrition"]};
+  const weak=[...AXES].sort((a,b)=>D[a]-D[b]).slice(0,2);
+  const set=new Set();[OBJ2AXIS[A.objectif]||weak[0],...weak].forEach(ax=>map[ax].forEach(s=>set.add(s)));
+  if(A.phase==="blesse"){["Photobiomodulation","Contraste","Préparation mentale (sportif blessé)"].forEach(s=>set.add(s));}
+  return [...set];
+}
+function submitCRM(){
+  const D=dims();const global=Math.round(avg(AXES.map(k=>D[k])));const p=persona();
+  const payload={prenom:contact.prenom,age:+contact.age,metier:A.metier||null,activite:p.qualificatif,senior:p.senior,
+    objectifPrioritaire:A.objectif,objectifsSecondaires:A.obj_sec||[],preference:A.pref||null,scores:D,scoreGlobal:global,
+    meilleurAxe:[...AXES].sort((a,b)=>D[b]-D[a])[0],axeFaible:[...AXES].sort((a,b)=>D[a]-D[b])[0],
+    persona:p.label,besoins:besoins(D),email:contact.email,newsletter:contact.consent,consentementRecherche:contact.science};
+  if(typeof window!=="undefined")window.FORGE_LAST_SUBMISSION=payload;
+  // horodatage + réponses brutes (pour analyse / calibration ultérieure)
+  payload.answers=A; payload.submittedAt=new Date().toISOString();
+  try{
+    fetch("/api/submit",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload),keepalive:true}).catch(function(){});
+  }catch(e){}
+}
+
+/* ============ RED FLAGS ============ */
+function who5(){return (((A.b_humeur??2.5)+(A.b_calme??2.5)+(A.b_energie??2.5))/15)*100;}
+function redFlags(){
+  const pa=painActive();
+  const sleep3=["assez","var"].includes(A.s_reg)&&["d5","d56"].includes(A.s_duree)&&(A.s_qual??3)<=2;
+  const impt=pa&&(A.d_int??0)>7, chronNo=pa&&A.d_anc==="a3plus"&&A.d_eval==="non",
+    acuteNo=pa&&["a6","a63"].includes(A.d_anc)&&A.d_eval==="non"&&(A.d_int??0)>5, lowWell=who5()<=40;
+  const triggered=sleep3||impt||chronNo||acuteNo||lowWell;
+  let kind="general"; if(lowWell)kind="moral"; else if(impt||chronNo||acuteNo)kind="douleur"; else if(sleep3)kind="sommeil";
+  return {triggered,kind};
+}
+
+/* ============ RADAR ============ */
+function radar(vals){
+  const cx=150,cy=150,R=92,n=6,pt=(i,r)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];};
+  let grid="";[0.25,0.5,0.75,1].forEach(f=>{let p="";for(let i=0;i<n;i++){const[x,y]=pt(i,R*f);p+=`${x.toFixed(1)},${y.toFixed(1)} `;}grid+=`<polygon points="${p}" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1"/>`;});
+  let axes="",labs="";for(let i=0;i<n;i++){const[x,y]=pt(i,R);axes+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>`;
+    const[lx,ly]=pt(i,R+20);const an=Math.abs(lx-cx)<6?"middle":(lx>cx?"start":"end");
+    labs+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" fill="#CFCFCF" font-size="11" font-family="Poppins,sans-serif" text-anchor="${an}">${RADLBL[i]}</text>`;}
+  let dp="",dots="",vlab="";for(let i=0;i<n;i++){const[x,y]=pt(i,R*Math.max(0.05,vals[i]/100));dp+=`${x.toFixed(1)},${y.toFixed(1)} `;dots+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="#F5F5F5"/>`;vlab+=`<text x="${x.toFixed(1)}" y="${(y-8).toFixed(1)}" fill="#F5F5F5" font-size="10" font-weight="600" font-family="Poppins,sans-serif" text-anchor="middle">${Math.round(vals[i])}%</text>`;}
+  return `<svg viewBox="0 0 300 300" width="100%" style="max-width:330px;display:block;margin:6px auto 0">${grid}${axes}<polygon points="${dp}" fill="rgba(255,255,255,.28)" stroke="#F5F5F5" stroke-width="2"/>${dots}${vlab}${labs}</svg>`;
+}
+
+/* ============ RESULTS ============ */
+function adviceBlock(axis,isDemande){
+  const a=getAdvice(axis);
+  let tips=a.tips.map(t=>`<div class="tip"><b>${t.h}</b><span>${t.t}${t.ref?` <span class="ref">(${t.ref})</span>`:""}</span></div>`).join("");
+  const vege=a.vege?`<div class="note-vege">${a.vege}</div>`:"";
+  return `<div class="advice ${isDemande?'demande':''}"><h3>${isDemande?"Répondre à votre priorité":"Votre prochain levier"} <span class="axtag">· ${AXLBL[axis]}</span></h3>${tips}${vege}</div>`;
+}
+function renderResults(){
+  const flag=redFlags();const D=dims();const vals=AXES.map(k=>D[k]);
+  const global=Math.round(avg(vals));const nom=contact.prenom||"";
+  const best=[...AXES].sort((a,b)=>D[b]-D[a])[0];const weak=[...AXES].sort((a,b)=>D[a]-D[b])[0];
+  const demandeAxis=OBJ2AXIS[A.objectif]||weak;
+  let secondAxis=weak; if(secondAxis===demandeAxis){secondAxis=[...AXES].sort((a,b)=>D[a]-D[b]).find(k=>k!==demandeAxis);}
+  let flagHTML="";
+  if(flag.triggered){
+    const why={moral:"Vos réponses sur votre moral et votre énergie sont basses : dans ce cas, un accompagnement humain est préférable à un protocole automatique.",
+      douleur:"Vous décrivez une douleur importante ou pas encore évaluée médicalement : par prudence, un avis humain doit précéder tout protocole.",
+      sommeil:"Votre sommeil paraît durablement perturbé sur plusieurs plans : mieux vaut en parler pour construire une réponse vraiment adaptée.",
+      general:"Certaines de vos réponses méritent un échange humain avant tout protocole."}[flag.kind];
+    flagHTML=`<div class="flag"><h3>On vous recommande d'abord d'échanger avec un conseiller</h3>
+      <p>${why} Un conseiller Forge fera le point avec vous et pourra, si nécessaire, vous orienter vers un professionnel de santé (médecin…). Votre bilan complet reste affiché juste en dessous.</p>
+      <button class="btn amber" id="talk" style="margin-top:14px;min-width:240px">Parler à un conseiller</button></div>`;
+  }
+  card.innerHTML=`<div class="panel fade">
+    <div class="res-hero">${wave(42)}<div class="score-lbl">Votre bilan</div>
+      ${nom?`<div class="palier" style="margin-top:6px">${nom}, voici votre baromètre de récupération.</div>`:""}</div>
+    ${flagHTML}
+    <div class="res-hero" style="padding-top:10px">
+      <div class="score-lbl">Votre capital récupération</div>
+      <div class="score-big">${global}%</div>
+      <div class="palier">${nom?nom+", vous":"Vous"} mobilisez ${global} % de votre capital récupération. ${palier(global)}</div>
+    </div>
+    ${radar(vals)}
+    <div class="valo">Bravo, vous mobilisez déjà bien <b>${LEVER[best]}</b> comme levier. La science le montre : un seul changement ciblé suffit à améliorer tout l'équilibre. Maintenez cet acquis, et concentrez votre énergie sur un axe à la fois — un pas après l'autre, pour des progrès durables.</div>
+    <div class="sect">Vos conseils</div>
+    ${adviceBlock(demandeAxis,true)}
+    ${secondAxis&&secondAxis!==demandeAxis?adviceBlock(secondAxis,false):""}
+    <div class="cta"><p>Chez Forge, on conçoit des programmes personnalisés pour progresser plus vite et ancrer vos résultats dans la durée. Rejoignez la communauté.</p>
+      <button class="btn" id="join">Rejoindre la communauté Forge</button></div>
+    <div class="restart-wrap"><button class="btn ghost" id="restart">Refaire le bilan</button></div>
+    ${contact.consent?`<div class="confirm">✓ Ton bilan part vers ${contact.email}.</div>`:""}
+    <p class="foot">Baromètre de bien-être fondé sur la littérature — ne remplace pas un avis médical. En cas de douleur aiguë, de mal-être important ou de doute, consultez un professionnel de santé.</p></div>`;
+  const talk=document.getElementById("talk");if(talk)talk.onclick=()=>alert("→ Prise de contact avec un conseiller Forge.");
+  document.getElementById("restart").onclick=resetAll;
+  document.getElementById("join").onclick=()=>alert("→ Rejoindre la communauté / les accompagnements Forge.");
+}
+function resetAll(){A={};pi=0;contact={prenom:"",age:"",email:"",consent:false,science:false};screen="intro";render();}
+render();
+</script>
+</body>
+</html>
