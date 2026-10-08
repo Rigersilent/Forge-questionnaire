@@ -62,6 +62,29 @@ app.config.update(
 # ----------------------------------------------------------------------
 # Base de données (SQLite)
 # ----------------------------------------------------------------------
+def _resolve_db_path(path):
+    """Garantit un chemin de base ouvrable : crée le dossier parent si besoin,
+    et bascule sur un emplacement sûr (à côté du code) s'il n'est pas accessible
+    en écriture. Évite le crash 'unable to open database file' quand le disque
+    persistant n'est pas monté."""
+    try:
+        parent = os.path.dirname(path) or "."
+        os.makedirs(parent, exist_ok=True)
+        # test d'écriture réel
+        testfile = os.path.join(parent, ".forge_write_test")
+        with open(testfile, "w") as fh:
+            fh.write("ok")
+        os.remove(testfile)
+        return path
+    except Exception:
+        fallback = os.path.join(BASE_DIR, "forge_crm.db")
+        print(f"[FORGE] '{path}' non accessible en écriture, bascule sur {fallback}")
+        return fallback
+
+
+DB_PATH = _resolve_db_path(DB_PATH)
+
+
 def get_db():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
