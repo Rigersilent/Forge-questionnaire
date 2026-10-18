@@ -133,7 +133,7 @@ const PAGES=[
  {id:"profil",n:"01",sec:"Habitudes de vie",title:"Votre quotidien.",
   intro:"Pour situer votre profil et personnaliser vos conseils.",
   qs:[
-   {id:"metier",type:"text",optional:true,l:"Quel est votre métier ?",hint:"Facultatif."},
+   {id:"metier",type:"text",optional:true,l:"Quel est votre métier ?",hint:"Facultatif — laissez vide si retraité ou non concerné."},
    {id:"travail",type:"choice",l:"Au travail, vous êtes plutôt…",o:[
      {v:"sed",t:"Sédentaire (assis)"},{v:"mixte",t:"Mixte"},{v:"phys",t:"Physique / debout"}]},
    {id:"objectif",type:"choice",stack:true,l:"Votre priorité n°1 en ce moment ?",o:[
@@ -165,6 +165,8 @@ const PAGES=[
      {v:"l15",t:"< 15 min"},{v:"l1530",t:"15–30 min"},{v:"l3060",t:"30–60 min"},{v:"l60",t:"> 60 min"}]},
    {id:"s_rev",type:"choice",sci:"Jenkins*",l:"Réveils nocturnes ou trop tôt sans vous rendormir ?",o:[
      {v:"r0",t:"Jamais / rare"},{v:"r1",t:"1×/sem"},{v:"r2",t:"2×/sem"},{v:"r3",t:"≥ 3×/sem"}]},
+   {id:"enfants3",type:"choice",l:"Avez-vous un ou des enfants de moins de 3 ans à la maison ?",hint:"Cela aide à comprendre votre sommeil.",o:[
+     {v:"oui",t:"Oui"},{v:"non",t:"Non"}]},
   ]},
  {id:"bienetre",n:"03",sec:"Corps ET tête",title:"Ces 2 semaines, <b>dans votre corps comme dans votre tête</b>.",
   intro:"Comment vous êtes-vous senti, physiquement et mentalement ?",
@@ -279,7 +281,7 @@ function palier(score){
 }
 
 /* ============ ÉTAT ============ */
-let A={},pi=0,screen="intro",contact={prenom:"",age:"",email:"",consent:false,science:false};
+let A={},pi=0,screen="intro",contact={prenom:"",nom:"",age:"",cp:"",email:"",consent:false,science:false};
 const card=document.getElementById("card");
 function painActive(){const z=A.d_zone||[];return z.length>0&&!z.includes("none");}
 function qActive(pg,q){if(q.showIf&&!q.showIf(A))return false;if(pg.id==="douleur"&&q.cond)return painActive();return true;}
@@ -299,16 +301,28 @@ function renderIntro(){
     <h1 class="accroche">Forgez votre récupération.</h1>
     <p class="hero-sub">En 6 minutes, découvrez votre <b>capital récupération</b> : vos points forts, les ressources que vous n'exploitez pas encore, et des conseils issus de la science pour progresser.</p>
     <div class="meta"><div><b>~6 min</b>chrono</div><div><b>6 axes</b>+ radar</div><div><b>Construit</b>avec des questionnaires scientifiques</div></div>
-    <div class="intro-fields"><div class="row2">
-      <div class="field"><label>Prénom</label><input id="prenom" type="text" autocomplete="given-name" placeholder="Prénom" value="${contact.prenom}"></div>
-      <div class="field"><label>Âge</label><input id="age" type="number" min="10" max="110" inputmode="numeric" placeholder="Âge" value="${contact.age}"></div>
-    </div></div>
+    <div class="intro-fields">
+      <div class="row2">
+        <div class="field"><label>Prénom</label><input id="prenom" type="text" autocomplete="given-name" placeholder="Prénom" value="${contact.prenom}"></div>
+        <div class="field"><label>Nom</label><input id="nom" type="text" autocomplete="family-name" placeholder="Nom" value="${contact.nom}"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Âge</label><input id="age" type="number" min="10" max="110" inputmode="numeric" placeholder="Âge" value="${contact.age}"></div>
+        <div class="field"><label>Code postal</label><input id="cp" type="text" inputmode="numeric" autocomplete="postal-code" placeholder="Code postal" value="${contact.cp}"></div>
+      </div>
+    </div>
     <div class="err" id="pnerr"></div>
     <button class="btn" id="go">Commencer le bilan</button></div></div>`;
-  const start=()=>{const p=document.getElementById("prenom").value.trim();const a=parseInt(document.getElementById("age").value,10);
-    if(!p){document.getElementById("pnerr").textContent="Dites-nous votre prénom pour commencer.";return;}
+  const start=()=>{
+    const p=document.getElementById("prenom").value.trim();
+    const n=document.getElementById("nom").value.trim();
+    const a=parseInt(document.getElementById("age").value,10);
+    const cp=document.getElementById("cp").value.trim();
+    if(!p){document.getElementById("pnerr").textContent="Indiquez votre prénom pour commencer.";return;}
+    if(!n){document.getElementById("pnerr").textContent="Indiquez votre nom.";return;}
     if(!a||a<10||a>110){document.getElementById("pnerr").textContent="Indiquez un âge valide.";return;}
-    contact.prenom=p;contact.age=a;screen="page";pi=0;render();scrollTop();};
+    if(!/^\d{4,5}$/.test(cp)){document.getElementById("pnerr").textContent="Indiquez un code postal valide.";return;}
+    contact.prenom=p;contact.nom=n;contact.age=a;contact.cp=cp;screen="page";pi=0;render();scrollTop();};
   document.getElementById("go").onclick=start;
 }
 
@@ -457,7 +471,9 @@ function besoins(D){
 }
 function submitCRM(){
   const D=dims();const global=Math.round(avg(AXES.map(k=>D[k])));const p=persona();
-  const payload={prenom:contact.prenom,age:+contact.age,metier:A.metier||null,activite:p.qualificatif,senior:p.senior,
+  const payload={prenom:contact.prenom,nom:contact.nom,age:+contact.age,codePostal:contact.cp||null,
+    metier:A.metier||null,retraite:(+contact.age)>=60,enfantsMoins3:A.enfants3==="oui",
+    activite:p.qualificatif,senior:p.senior,
     objectifPrioritaire:A.objectif,objectifsSecondaires:A.obj_sec||[],preference:A.pref||null,scores:D,scoreGlobal:global,
     meilleurAxe:[...AXES].sort((a,b)=>D[b]-D[a])[0],axeFaible:[...AXES].sort((a,b)=>D[a]-D[b])[0],
     persona:p.label,besoins:besoins(D),email:contact.email,newsletter:contact.consent,consentementRecherche:contact.science};
@@ -539,7 +555,7 @@ function renderResults(){
   document.getElementById("restart").onclick=resetAll;
   document.getElementById("join").onclick=()=>alert("→ Rejoindre la communauté / les accompagnements Forge.");
 }
-function resetAll(){A={};pi=0;contact={prenom:"",age:"",email:"",consent:false,science:false};screen="intro";render();}
+function resetAll(){A={};pi=0;contact={prenom:"",nom:"",age:"",cp:"",email:"",consent:false,science:false};screen="intro";render();}
 render();
 </script>
 </body>
