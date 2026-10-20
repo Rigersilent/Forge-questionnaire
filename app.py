@@ -103,11 +103,46 @@ def _resolve_db_path(path):
 
 DB_PATH = _resolve_db_path(DB_PATH)
 
+# --- Postgres (Neon / Render) si DATABASE_URL est défini, sinon SQLite local ---
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+IS_PG = bool(DATABASE_URL)
+if IS_PG:
+    import psycopg2
+    import psycopg2.extras
+    # Neon exige SSL
+    if "sslmode=" not in DATABASE_URL:
+        DATABASE_URL += ("&" if "?" in DATABASE_URL else "?") + "sslmode=require"
+    print("[FORGE] Base : PostgreSQL (DATABASE_URL détecté)")
+else:
+    print(f"[FORGE] Base : SQLite ({DB_PATH})")
+
+
+class DB:
+    """Connexion unifiée SQLite / PostgreSQL. execute() accepte des '?'
+    (traduits en '%s' pour Postgres) et renvoie des lignes accessibles par nom."""
+    def __init__(self):
+        if IS_PG:
+            self.conn = psycopg2.connect(DATABASE_URL)
+        else:
+            self.conn = sqlite3.connect(DB_PATH)
+            self.conn.row_factory = sqlite3.Row
+
+    def execute(self, sql, params=()):
+        if IS_PG:
+            cur = self.conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            cur.execute(sql.replace("?", "%s"), params)
+            return cur
+        return self.conn.execute(sql, params)
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return DB()
 
 
 COLUMNS = [
@@ -121,18 +156,25 @@ COLUMNS = [
     ("score_global", "INTEGER"), ("meilleur_axe", "TEXT"), ("axe_faible", "TEXT"),
     ("s_sommeil", "REAL"), ("s_forme", "REAL"), ("s_recup", "REAL"),
     ("s_stress", "REAL"), ("s_confort", "REAL"), ("s_nutrition", "REAL"),
-    ("besoins", "TEXT"), ("newsletter", "INTEGER"), ("consent_recherche", "INTEGER"),
+    ("besoins", "TEXT"), ("consent_rgpd", "INTEGER"),
+    ("newsletter", "INTEGER"), ("consent_recherche", "INTEGER"),
     ("answers_json", "TEXT"), ("ip", "TEXT"), ("user_agent", "TEXT"),
 ]
 
 
 def init_db():
     conn = get_db()
+    id_col = "id SERIAL PRIMARY KEY" if IS_PG else "id INTEGER PRIMARY KEY AUTOINCREMENT"
     cols_sql = ",\n".join(f"{n} {t}" for n, t in COLUMNS)
-    conn.execute(f"CREATE TABLE IF NOT EXISTS submissions (id INTEGER PRIMARY KEY AUTOINCREMENT,\n{cols_sql})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS submissions ({id_col},\n{cols_sql})")
     conn.commit()
     # migration douce : ajoute les colonnes manquantes sur une base existante
-    existing = {r["name"] for r in conn.execute("PRAGMA table_info(submissions)")}
+    if IS_PG:
+        rows = conn.execute(
+            "SELECT column_name AS name FROM information_schema.columns WHERE table_name='submissions'").fetchall()
+        existing = {r["name"] for r in rows}
+    else:
+        existing = {r["name"] for r in conn.execute("PRAGMA table_info(submissions)").fetchall()}
     for n, t in COLUMNS:
         if n not in existing:
             try:
@@ -140,6 +182,7 @@ def init_db():
             except Exception:
                 pass
     conn.commit()
+    conn.close()
     conn.close()
 
 
@@ -246,6 +289,7 @@ def api_submit():
         "s_recup": _flt(sc.get("recup")), "s_stress": _flt(sc.get("stress")),
         "s_confort": _flt(sc.get("confort")), "s_nutrition": _flt(sc.get("nutrition")),
         "besoins": json.dumps(data.get("besoins") or [], ensure_ascii=False),
+        "consent_rgpd": 1 if data.get("consentRGPD") else 0,
         "newsletter": 1 if data.get("newsletter") else 0,
         "consent_recherche": 1 if data.get("consentementRecherche") else 0,
         "answers_json": json.dumps(ans, ensure_ascii=False)[:60000],
@@ -255,9 +299,9 @@ def api_submit():
     cols = ",".join(row.keys())
     ph = ",".join("?" for _ in row)
     conn = get_db()
-    cur = conn.execute(f"INSERT INTO submissions ({cols}) VALUES ({ph})", list(row.values()))
+    cur = conn.execute(f"INSERT INTO submissions ({cols}) VALUES ({ph}) RETURNING id", list(row.values()))
+    new_id = cur.fetchone()["id"]
     conn.commit()
-    new_id = cur.lastrowid
     conn.close()
     return jsonify({"ok": True, "id": new_id})
 
